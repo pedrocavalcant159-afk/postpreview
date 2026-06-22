@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Post Preview — Simulador de Instagram</title>
+  <style>
+    :root{
+      --bg:#f5f5f7;
+      --panel:#ffffff;
+      --text:#171717;
+      --muted:#747474;
+      --line:#e9e9eb;
+      --accent:#ff3f76;
+      --accent-dark:#d82759;
+      --soft:#fff0f5;
+      --shadow:0 20px 55px rgba(27,23,30,.11);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 90% 0%, rgba(255,140,175,.12), transparent 26rem),
+        radial-gradient(circle at 0% 75%, rgba(255,204,119,.13), transparent 28rem),
+        var(--bg);
+    }
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}
+    .app{max-width:1440px; margin:auto; padding:30px 26px 42px}
+    header{
+      display:flex; justify-content:space-between; gap:20px; align-items:center;
+      margin-bottom:25px;
+    }
+    .brand{display:flex; align-items:center; gap:13px}
+    .brand-mark{
+      width:42px; height:42px; border-radius:14px;
+      display:grid; place-items:center; color:#fff; font-weight:900; font-size:20px;
+      background:linear-gradient(135deg,#ffb659 0%,#ff5a8f 50%,#8435e7 100%);
+      box-shadow:0 10px 25px rgba(220,74,144,.25);
+    }
+    h1{font-size:18px; margin:0; letter-spacing:-.35px}
+    .subtitle{font-size:13px; color:var(--muted); margin:3px 0 0}
+    .status{
+      border:1px solid #dff1df; color:#2c7a3e; background:#f4fff6;
+      padding:8px 12px; border-radius:99px; font-size:12px; font-weight:700;
+    }
+    .workspace{
+      display:grid; grid-template-columns:minmax(310px, .82fr) minmax(440px,1.18fr); gap:25px;
+      align-items:start;
+    }
+    .controls,.preview-panel{
+      background:rgba(255,255,255,.9); border:1px solid rgba(255,255,255,.8);
+      box-shadow:var(--shadow); border-radius:var(--radius);
+      overflow:hidden;
+    }
+    .controls{padding:22px}
+    .panel-title{font-size:15px; font-weight:800; margin:0 0 4px}
+    .panel-help{font-size:12px;color:var(--muted);margin:0 0 17px;line-height:1.45}
+    .section{border-top:1px solid var(--line); padding-top:18px; margin-top:18px}
+    .section:first-of-type{border-top:0;padding-top:0;margin-top:0}
+    .label-row{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px}
+    label,.field-label{font-weight:750;font-size:12px}
+    .counter{font-size:11px;color:var(--muted)}
+    .field,input[type=text],textarea,select{
+      width:100%; border:1px solid #dedee2; color:var(--text); background:#fff;
+      outline:none; border-radius:11px; transition:.18s ease;
+    }
+    input[type=text],select{height:42px; padding:0 12px}
+    textarea{min-height:126px; resize:vertical; padding:11px 12px; line-height:1.45}
+    .field:focus,input:focus,select:focus,textarea:focus{border-color:#ff70a1; box-shadow:0 0 0 4px rgba(255,63,118,.10)}
+    .field-grid{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+    .dropzone{
+      border:1.5px dashed #cfcfd5; border-radius:15px; min-height:118px;
+      padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; background:#fafafb; transition:.2s;
+    }
+    .dropzone.dragover{background:#fff0f5;border-color:var(--accent);transform:translateY(-1px)}
+    .dropzone-icon{font-size:25px;line-height:1;margin-bottom:8px}
+    .dropzone strong{font-size:13px}
+    .dropzone span{font-size:11px;color:var(--muted);margin-top:4px}
+    .upload-button{
+      margin-top:11px; color:#fff; background:var(--text); border:0; border-radius:11px; padding:10px 14px;
+      font-size:12px;font-weight:800; display:inline-flex; gap:7px;align-items:center;
+    }
+    .upload-button:hover{background:#333}
+    #imageInput,#avatarInput{display:none}
+    .media-note{font-size:11px;color:var(--muted);margin:10px 0 0}
+    .media-list{display:grid;gap:8px;margin-top:13px}
+    .media-row{
+      border:1px solid var(--line); background:#fff; border-radius:12px; padding:7px;
+      display:grid;grid-template-columns:44px 1fr auto; gap:9px; align-items:center;
+    }
+    .media-thumb{width:44px;height:44px;border-radius:8px;overflow:hidden;background:#eee}
+    .media-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .media-name{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .media-sub{font-size:10px;color:var(--muted);margin-top:2px}
+    .media-actions{display:flex;gap:3px}
+    .icon-button{
+      width:28px;height:28px; border:0;background:#f5f5f6;border-radius:8px;color:#555;font-weight:800;
+    }
+    .icon-button:hover{background:#e9e9ed}
+    .empty-list{font-size:12px;color:var(--muted);padding:8px 2px}
+    .segmented{display:flex; border:1px solid var(--line); border-radius:11px; padding:3px; gap:3px; background:#f7f7f8}
+    .segmented button{flex:1;border:0;border-radius:8px;background:transparent;padding:8px;font-size:11px;font-weight:750;color:#757575}
+    .segmented button.active{background:#fff;color:#171717;box-shadow:0 2px 7px rgba(0,0,0,.07)}
+    .preview-panel{padding:17px;min-height:760px}
+    .preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:1px 1px 16px}
+    .preview-head p{margin:0;color:var(--muted);font-size:12px}
+    .reset{border:0;background:transparent;color:#747474;text-decoration:underline;font-size:12px;padding:5px}
+    .simulator-wrap{display:flex;justify-content:center;padding:9px 4px 21px}
+    .instagram{
+      width:min(100%, 460px); background:white; border:1px solid #dbdbdb; border-radius:2px; overflow:hidden;
+      box-shadow:0 16px 40px rgba(31,28,33,.11);
+    }
+    .ig-profile{height:62px;display:flex;align-items:center;gap:10px;padding:0 13px}
+    .avatar{
+      flex:0 0 33px;width:33px;height:33px;border-radius:50%;
+      background:linear-gradient(135deg,#ffcd71,#ff527d 48%,#a23eea); padding:2px;overflow:hidden;
+    }
+    .avatar-inner{width:100%;height:100%;border-radius:50%;background:white;display:grid;place-items:center;overflow:hidden;font-size:12px;font-weight:850;color:#555}
+    .avatar-inner img{width:100%;height:100%;object-fit:cover}
+    .ig-user{min-width:0;flex:1}
+    .ig-name{font-weight:750;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ig-location{font-size:10px;margin-top:2px;color:#3e3e3e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .more{font-size:21px;letter-spacing:1px;line-height:1;transform:translateY(-3px)}
+    .media-stage{
+      background:#f0f0f1; position:relative; width:100%; overflow:hidden;
+      display:grid;place-items:center;
+    }
+    .media-stage.ratio-square{aspect-ratio:1/1}
+    .media-stage.ratio-portrait{aspect-ratio:4/5}
+    .media-stage.ratio-landscape{aspect-ratio:1.91/1}
+    .media-stage img{width:100%;height:100%;object-fit:cover;display:block; user-select:none}
+    .placeholder{
+      color:#aaa; text-align:center; padding:25px; font-size:13px; line-height:1.5;
+    }
+    .placeholder span{display:block;font-size:33px;margin-bottom:7px}
+    .carousel-nav{
+      position:absolute; top:50%; transform:translateY(-50%); z-index:3;
+      width:29px;height:29px;border-radius:50%;border:0;background:rgba(255,255,255,.91);
+      color:#444;box-shadow:0 1px 3px rgba(0,0,0,.18);font-size:21px;line-height:1;
+    }
+    .carousel-nav.prev{left:9px}.carousel-nav.next{right:9px}
+    .carousel-count{
+      position:absolute;right:11px;top:10px;background:rgba(0,0,0,.60);color:#fff;border-radius:99px;
+      padding:4px 8px;font-size:10px;font-weight:700;z-index:2
+    }
+    .ig-body{padding:10px 12px 13px}
+    .ig-actions{height:30px;display:flex;align-items:center;gap:14px}
+    .ig-action{font-size:23px;line-height:1;color:#161616;user-select:none}
+    .ig-action.save{margin-left:auto;font-size:22px}
+    .dots{height:18px;display:flex;align-items:center;justify-content:center;gap:4px;margin-top:-24px;padding:0 56px}
+    .dot{width:5px;height:5px;border-radius:50%;background:#c6c6c8}.dot.active{background:#0095f6}
+    .likes{font-size:12px;font-weight:750;margin:10px 0 7px}
+    .caption{font-size:12px;line-height:1.43;white-space:pre-wrap;word-break:break-word}
+    .caption-user{font-weight:800;margin-right:5px}
+    .comments{font-size:12px;color:#808080;margin:8px 0}
+    .time{font-size:9px;color:#838383;letter-spacing:.35px;text-transform:uppercase}
+    .preview-footer{
+      border-top:1px solid var(--line); padding:15px 4px 0; margin-top:8px;
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center;
+    }
+    .badge{background:#f7f7f8;border-radius:99px;color:#666;padding:7px 10px;font-size:11px}
+    .toast{
+      position:fixed; left:50%; bottom:22px; transform:translate(-50%,120px);
+      background:#202023;color:#fff;padding:10px 14px;border-radius:11px;font-size:12px;font-weight:650;
+      opacity:0; transition:.25s; z-index:20;
+    }
+    .toast.show{transform:translate(-50%,0);opacity:1}
+    @media (max-width:960px){
+      .app{padding:20px 14px 32px}
+      header{margin-bottom:16px}
+      .workspace{grid-template-columns:1fr}
+      .preview-panel{min-height:auto}
+      .controls{order:2}.preview-panel{order:1}
+    }
+    @media (max-width:480px){
+      header .status{display:none}
+      .field-grid{grid-template-columns:1fr}
+      .controls{padding:18px}.preview-panel{padding:12px}
+      .instagram{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div>
+          <h1>Post Preview</h1>
+          <p class="subtitle">Simule um post ou carrossel antes de publicar.</p>
+        </div>
+      </div>
+      <div class="status">● Tudo fica somente no seu navegador</div>
+    </header>
+
+    <section class="workspace">
+      <aside class="controls">
+        <p class="panel-title">Monte sua publicação</p>
+        <p class="panel-help">Envie as artes, organize o carrossel e teste sua legenda em uma prévia parecida com o feed.</p>
+
+        <div class="section">
+          <div class="label-row">
+            <span class="field-label">Imagens do post</span>
+            <span class="counter" id="imageCount">0 / 10</span>
+          </div>
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon">▣</div>
+            <strong>Arraste suas imagens aqui</strong>
+            <span>PNG, JPG ou WEBP · até 10 imagens</span>
+            <button class="upload-button" type="button" id="uploadBtn">+ Escolher imagens</button>
+          </div>
+          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" multiple />
+          <p class="media-note">Use uma imagem para post único ou duas ou mais para simular um carrossel.</p>
+          <div class="media-list" id="mediaList">
+            <div class="empty-list">Nenhuma imagem enviada ainda.</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label-row"><span class="field-label">Conta</span></div>
+          <div class="field-grid">
+            <input id="accountInput" type="text" value="sua_marca" maxlength="30" aria-label="Nome da conta" />
+            <input id="locationInput" type="text" value="" placeholder="Localização (opcional)" maxlength="50" aria-label="Localização" />
+          </div>
+          <button class="upload-button" type="button" id="avatarBtn" style="margin-top:10px;background:#f1f1f3;color:#303033">◉ Alterar foto de perfil</button>
+          <input id="avatarInput" type="file" accept="image/png,image/jpeg,image/webp" />
+        </div>
+
+        <div class="section">
+          <div class="label-row">
+            <label for="captionInput">Legenda</label>
+            <span class="counter" id="captionCount">0 / 2.200</span>
+          </div>
+          <textarea id="captionInput" maxlength="2200" placeholder="Escreva sua legenda aqui...">Sua legenda aparece aqui. ✨</textarea>
+        </div>
+
+        <div class="section">
+          <div class="label-row"><span class="field-label">Formato da arte</span></div>
+          <select id="ratioSelect" aria-label="Formato da arte">
+            <option value="square">Quadrado · 1:1</option>
+            <option value="portrait">Retrato · 4:5</option>
+            <option value="landscape">Horizontal · 1.91:1</option>
+          </select>
+        </div>
+
+        <div class="section">
+          <div class="label-row"><span class="field-label">Visualização</span></div>
+          <div class="segmented" id="viewSwitch">
+            <button class="active" data-view="auto" type="button">Automático</button>
+            <button data-view="single" type="button">Post</button>
+            <button data-view="carousel" type="button">Carrossel</button>
+          </div>
+        </div>
+      </aside>
+
+      <section class="preview-panel">
+        <div class="preview-head">
+          <div>
+            <p class="panel-title">Prévia no feed</p>
+            <p>Use as setas da imagem para navegar entre os cards.</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:9px">
+            <button class="upload-button" type="button" id="shareBtn" style="margin:0;padding:8px 11px;background:#171717">↗ Baixar visualização</button>
+            <button class="reset" type="button" id="resetBtn">Limpar tudo</button>
+          </div>
+        </div>
+
+        <div class="simulator-wrap">
+          <article class="instagram" aria-label="Simulador de publicação do Instagram">
+            <div class="ig-profile">
+              <div class="avatar"><div class="avatar-inner" id="avatarPreview">SM</div></div>
+              <div class="ig-user">
+                <div class="ig-name" id="usernamePreview">sua_marca</div>
+                <div class="ig-location" id="locationPreview" hidden></div>
+              </div>
+              <div class="more">•••</div>
+            </div>
+
+            <div class="media-stage ratio-square" id="mediaStage">
+              <div class="placeholder" id="placeholder"><span>▧</span>Envie uma ou mais imagens<br>para começar a visualizar.</div>
+              <button class="carousel-nav prev" id="prevBtn" type="button" hidden aria-label="Imagem anterior">‹</button>
+              <button class="carousel-nav next" id="nextBtn" type="button" hidden aria-label="Próxima imagem">›</button>
+              <div class="carousel-count" id="carouselCount" hidden>1/1</div>
+            </div>
+
+            <div class="ig-body">
+              <div class="ig-actions">
+                <span class="ig-action" id="heart" role="button" tabindex="0" title="Curtir">♡</span>
+                <span class="ig-action" title="Comentar">◯</span>
+                <span class="ig-action" title="Compartilhar">⌁</span>
+                <span class="ig-action save" title="Salvar">♧</span>
+              </div>
+              <div class="dots" id="dots"></div>
+              <div class="likes">Curtido por <strong>seu_público</strong> e outras pessoas</div>
+              <div class="caption"><span class="caption-user" id="captionUser">sua_marca</span><span id="captionPreview">Sua legenda aparece aqui. ✨</span></div>
+              <div class="comments">Ver todos os comentários</div>
+              <div class="time">há alguns segundos</div>
+            </div>
+          </article>
+        </div>
+        <div class="preview-footer">
+          <span class="badge" id="modeBadge">Post único</span>
+          <span class="badge" id="formatBadge">Formato 1:1</span>
+          <span class="badge" id="slideBadge">Sem imagens</span>
+        </div>
+      </section>
+    </section>
+  </main>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const state = { images: [], current: 0, avatar: null, view: 'auto', liked: false };
+    const $ = (id) => document.getElementById(id);
+    const input = $('imageInput');
+    const dropzone = $('dropzone');
+    const mediaList = $('mediaList');
+    const stage = $('mediaStage');
+    const placeholder = $('placeholder');
+    const prevBtn = $('prevBtn');
+    const nextBtn = $('nextBtn');
+    const count = $('carouselCount');
+    const dots = $('dots');
+
+    function esc(str){
+      const el = document.createElement('div'); el.textContent = str; return el.innerHTML;
+    }
+    function initials(value){
+      const parts = value.trim().replace(/[^a-zÀ-ÿ0-9 ]/gi,'').split(/\s+/).filter(Boolean);
+      return (parts.slice(0,2).map(p => p[0]).join('') || 'SM').toUpperCase();
+    }
+    function showToast(message){
+      const t=$('toast');t.textContent=message;t.classList.add('show');
+      clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove('show'),2200);
+    }
+    function effectiveCarousel(){
+      if(state.view==='single') return false;
+      if(state.view==='carousel') return state.images.length > 0;
+      return state.images.length > 1;
+    }
+    function applyImages(files){
+      const valid = Array.from(files).filter(f => /^image\/(png|jpeg|webp)$/.test(f.type));
+      if(!valid.length){ showToast('Escolha arquivos PNG, JPG ou WEBP.'); return; }
+      const remaining = 10-state.images.length;
+      if(remaining <= 0){showToast('O limite é de 10 imagens.');return;}
+      valid.slice(0,remaining).forEach(file=>{
+        const reader=new FileReader();
+        reader.onload=e=>{
+          state.images.push({name:file.name,src:e.target.result,size:file.size});
+          render();
+        };
+        reader.readAsDataURL(file);
+      });
+      if(valid.length>remaining) showToast(`Somente ${remaining} imagem(ns) foram adicionadas.`);
+    }
+    function formatFileSize(bytes){
+      if(bytes<1024*1024) return `${Math.max(1,Math.round(bytes/1024))} KB`;
+      return `${(bytes/(1024*1024)).toFixed(1)} MB`;
+    }
+    function renderMediaList(){
+      $('imageCount').textContent=`${state.images.length} / 10`;
+      if(!state.images.length){
+        mediaList.innerHTML='<div class="empty-list">Nenhuma imagem enviada ainda.</div>';
+        return;
+      }
+      mediaList.innerHTML=state.images.map((img,i)=>`
+        <div class="media-row">
+          <div class="media-thumb"><img src="${img.src}" alt=""></div>
+          <div style="min-width:0">
+            <div class="media-name">${esc(img.name)}</div>
+            <div class="media-sub">Card ${i+1} · ${formatFileSize(img.size)}</div>
+          </div>
+          <div class="media-actions">
+            <button class="icon-button" type="button" title="Mover para esquerda" data-action="left" data-index="${i}" ${i===0?'disabled':''}>←</button>
+            <button class="icon-button" type="button" title="Mover para direita" data-action="right" data-index="${i}" ${i===state.images.length-1?'disabled':''}>→</button>
+            <button class="icon-button" type="button" title="Remover imagem" data-action="remove" data-index="${i}">×</button>
+          </div>
+        </div>`).join('');
+    }
+    function renderStage(){
+      const r=$('ratioSelect').value;
+      stage.className='media-stage ratio-'+r;
+      const has=state.images.length>0;
+      if(!has){
+        placeholder.hidden=false;
+        [...stage.querySelectorAll('.stage-image')].forEach(e=>e.remove());
+      }else{
+        placeholder.hidden=true;
+        let image=stage.querySelector('.stage-image');
+        if(!image){image=document.createElement('img');image.className='stage-image';image.alt='Imagem do post';stage.prepend(image);}
+        image.src=state.images[state.current].src;
+      }
+      const carousel=effectiveCarousel() && state.images.length>1;
+      // No primeiro card não é possível voltar; no último, não é possível avançar.
+      prevBtn.hidden=!carousel || state.current===0;
+      nextBtn.hidden=!carousel || state.current===state.images.length-1;
+      count.hidden=!carousel;
+      if(carousel) count.textContent=`${state.current+1}/${state.images.length}`;
+      dots.innerHTML=carousel?state.images.map((_,i)=>`<span class="dot ${i===state.current?'active':''}"></span>`).join(''):'';
+      $('modeBadge').textContent=carousel?'Carrossel':'Post único';
+      $('slideBadge').textContent=has?`Card ${state.current+1} de ${state.images.length}`:'Sem imagens';
+      const formats={square:'Formato 1:1',portrait:'Formato 4:5',landscape:'Formato 1.91:1'};
+      $('formatBadge').textContent=formats[r];
+    }
+    function render(){
+      if(state.current>state.images.length-1) state.current=Math.max(0,state.images.length-1);
+      renderMediaList();renderStage();
+    }
+    function go(direction){
+      if(!state.images.length)return;
+      const nextIndex = state.current + direction;
+      if(nextIndex < 0 || nextIndex >= state.images.length) return;
+      state.current = nextIndex;
+      renderStage();
+    }
+
+    $('uploadBtn').addEventListener('click',()=>input.click());
+    input.addEventListener('change',e=>{applyImages(e.target.files);input.value=''});
+    ['dragenter','dragover'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.add('dragover')}));
+    ['dragleave','drop'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.remove('dragover')}));
+    dropzone.addEventListener('drop',e=>applyImages(e.dataTransfer.files));
+    prevBtn.addEventListener('click',()=>go(-1));nextBtn.addEventListener('click',()=>go(1));
+    mediaList.addEventListener('click',e=>{
+      const b=e.target.closest('button[data-action]');if(!b)return;
+      const i=Number(b.dataset.index), action=b.dataset.action;
+      if(action==='remove'){state.images.splice(i,1); if(state.current>=state.images.length)state.current=Math.max(0,state.images.length-1);}
+      if(action==='left'&&i>0){[state.images[i-1],state.images[i]]=[state.images[i],state.images[i-1]]; if(state.current===i)state.current=i-1;else if(state.current===i-1)state.current=i;}
+      if(action==='right'&&i<state.images.length-1){[state.images[i+1],state.images[i]]=[state.images[i],state.images[i+1]]; if(state.current===i)state.current=i+1;else if(state.current===i+1)state.current=i;}
+      render();
+    });
+    $('accountInput').addEventListener('input',e=>{
+      const name=e.target.value.trim()||'sua_marca';
+      $('usernamePreview').textContent=name;$('captionUser').textContent=name;
+      if(!state.avatar)$('avatarPreview').textContent=initials(name);
+    });
+    $('locationInput').addEventListener('input',e=>{
+      const value=e.target.value.trim();$('locationPreview').hidden=!value;$('locationPreview').textContent=value;
+    });
+    $('captionInput').addEventListener('input',e=>{
+      $('captionPreview').textContent=e.target.value||'';
+      $('captionCount').textContent=`${e.target.value.length.toLocaleString('pt-BR')} / 2.200`;
+    });
+    $('ratioSelect').addEventListener('change',renderStage);
+    $('viewSwitch').addEventListener('click',e=>{
+      const b=e.target.closest('button[data-view]');if(!b)return;
+      state.view=b.dataset.view;
+      [...$('viewSwitch').querySelectorAll('button')].forEach(x=>x.classList.toggle('active',x===b));
+      renderStage();
+    });
+    $('avatarBtn').addEventListener('click',()=>$('avatarInput').click());
+    $('avatarInput').addEventListener('change',e=>{
+      const file=e.target.files[0];if(!file)return;
+      const reader=new FileReader();reader.onload=x=>{
+        state.avatar=x.target.result;$('avatarPreview').innerHTML=`<img src="${state.avatar}" alt="Foto de perfil">`;
+      };reader.readAsDataURL(file);e.target.value='';
+    });
+    $('heart').addEventListener('click',()=>{
+      state.liked=!state.liked;$('heart').textContent=state.liked?'♥':'♡';
+      $('heart').style.color=state.liked?'#ed4956':'#161616';
+    });
+    function readonlyEscape(value){
+      return String(value ?? '')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#039;');
+    }
+
+    function createReadOnlyPreview(){
+      if(!state.images.length){
+        showToast('Envie pelo menos uma imagem antes de criar a visualização.');
+        return;
+      }
+
+      const account = $('accountInput').value.trim() || 'sua_marca';
+      const location = $('locationInput').value.trim();
+      const caption = $('captionInput').value.trim();
+      const ratio = $('ratioSelect').value;
+      const ratioClass = ratio === 'portrait' ? 'portrait' : ratio === 'landscape' ? 'landscape' : 'square';
+      const images = state.images.map(image => image.src);
+      const avatar = state.avatar || '';
+      const initialsText = initials(account);
+
+      const readonlyHtml = `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${readonlyEscape(account)} — Visualização do post</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f5f7;color:#161616;font-family:Inter,Arial,sans-serif}
+.page{min-height:100vh;padding:28px 16px 38px;display:flex;flex-direction:column;align-items:center}
+.top{width:min(100%,460px);display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;color:#757575;font-size:12px}
+.top strong{color:#171717;font-size:13px}.view{width:min(100%,460px);background:#fff;border:1px solid #dbdbdb;box-shadow:0 16px 40px rgba(31,28,33,.10);overflow:hidden}
+.profile{height:62px;display:flex;align-items:center;gap:10px;padding:0 13px}.avatar{width:33px;height:33px;border-radius:50%;padding:2px;flex:0 0 33px;background:linear-gradient(135deg,#ffcd71,#ff527d 48%,#a23eea)}
+.avatarInner{width:100%;height:100%;border-radius:50%;overflow:hidden;background:#fff;display:grid;place-items:center;font-size:12px;font-weight:850;color:#555}.avatarInner img{width:100%;height:100%;object-fit:cover}.user{min-width:0;flex:1}.name{font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.location{font-size:10px;margin-top:2px;color:#3e3e3e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.more{font-size:21px;letter-spacing:1px;transform:translateY(-3px)}
+.stage{position:relative;width:100%;background:#f0f0f1;overflow:hidden}.stage.square{aspect-ratio:1/1}.stage.portrait{aspect-ratio:4/5}.stage.landscape{aspect-ratio:1.91/1}.stage img{width:100%;height:100%;object-fit:cover;display:block}.nav{position:absolute;top:50%;transform:translateY(-50%);width:29px;height:29px;border:0;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 1px 3px rgba(0,0,0,.18);font-size:21px;line-height:1;color:#444;cursor:pointer}.nav.prev{left:9px}.nav.next{right:9px}.nav[hidden]{display:none}.count{position:absolute;right:11px;top:10px;background:rgba(0,0,0,.60);color:#fff;border-radius:99px;padding:4px 8px;font-size:10px;font-weight:700}.body{padding:10px 12px 13px}.actions{height:30px;display:flex;gap:14px;align-items:center;font-size:23px;line-height:1}.save{margin-left:auto;font-size:22px}.dots{height:18px;display:flex;align-items:center;justify-content:center;gap:4px;margin-top:-24px;padding:0 56px}.dot{width:5px;height:5px;border-radius:50%;background:#c6c6c8}.dot.active{background:#0095f6}.likes{font-size:12px;font-weight:750;margin:10px 0 7px}.caption{font-size:12px;line-height:1.43;white-space:pre-wrap;word-break:break-word}.caption b{margin-right:5px}.comments{font-size:12px;color:#808080;margin:8px 0}.time{font-size:9px;color:#838383;letter-spacing:.35px;text-transform:uppercase}.notice{width:min(100%,460px);font-size:11px;color:#888;text-align:center;margin-top:14px;line-height:1.4}@media(max-width:480px){.page{padding:16px 0 26px}.top{padding:0 14px;margin-bottom:10px}.view{border-left:0;border-right:0}.notice{padding:0 16px}}
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="top"><strong>Visualização do post</strong><span>Somente leitura</span></div>
+  <article class="view">
+    <div class="profile">
+      <div class="avatar"><div class="avatarInner">${avatar ? `<img src="${avatar}" alt="Foto do perfil">` : readonlyEscape(initialsText)}</div></div>
+      <div class="user"><div class="name">${readonlyEscape(account)}</div>${location ? `<div class="location">${readonlyEscape(location)}</div>` : ''}</div>
+      <div class="more">•••</div>
+    </div>
+    <div class="stage ${ratioClass}">
+      <img id="image" alt="Imagem da publicação">
+      <button class="nav prev" id="prev" type="button" aria-label="Imagem anterior">‹</button>
+      <button class="nav next" id="next" type="button" aria-label="Próxima imagem">›</button>
+      <div class="count" id="count"></div>
+    </div>
+    <div class="body">
+      <div class="actions"><span>♡</span><span>◯</span><span>⌁</span><span class="save">♧</span></div>
+      <div class="dots" id="dots"></div>
+      <div class="likes">Curtido por <strong>seu_público</strong> e outras pessoas</div>
+      <div class="caption"><b>${readonlyEscape(account)}</b>${readonlyEscape(caption)}</div>
+      <div class="comments">Ver todos os comentários</div>
+      <div class="time">há alguns segundos</div>
+    </div>
+  </article>
+  <div class="notice">Esta é uma prévia para aprovação. Os dados e imagens não podem ser editados nesta tela.</div>
+</main>
+<script>
+const images=${JSON.stringify(images)};
+let current=0;
+const image=document.getElementById('image'),prev=document.getElementById('prev'),next=document.getElementById('next'),count=document.getElementById('count'),dots=document.getElementById('dots');
+function render(){
+  image.src=images[current];
+  const carousel=images.length>1;
+  prev.hidden=!carousel||current===0;
+  next.hidden=!carousel||current===images.length-1;
+  count.hidden=!carousel;
+  count.textContent=(current+1)+'/'+images.length;
+  dots.innerHTML=carousel?images.map((_,i)=>'<span class="dot '+(i===current?'active':'')+'"></span>').join(''):'';
+}
+prev.addEventListener('click',()=>{if(current>0){current--;render()}});
+next.addEventListener('click',()=>{if(current<images.length-1){current++;render()}});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'&&current>0){current--;render()}if(e.key==='ArrowRight'&&current<images.length-1){current++;render()}});
+render();
+<\/script>
+</body>
+</html>`;
+
+      const blob = new Blob([readonlyHtml], {type:'text/html;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const safeName = account.replace(/[^\w\-]+/g,'_').replace(/^_+|_+$/g,'') || 'post';
+      link.href = url;
+      link.download = `visualizacao-${safeName}.html`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showToast('Versão somente visualização baixada.');
+    }
+
+    $('shareBtn').addEventListener('click', createReadOnlyPreview);
+
+    $('resetBtn').addEventListener('click',()=>{
+      state.images=[];state.current=0;state.avatar=null;state.view='auto';state.liked=false;
+      $('accountInput').value='sua_marca';$('locationInput').value='';$('captionInput').value='Sua legenda aparece aqui. ✨';$('ratioSelect').value='square';
+      $('usernamePreview').textContent='sua_marca';$('captionUser').textContent='sua_marca';$('locationPreview').hidden=true;$('captionPreview').textContent='Sua legenda aparece aqui. ✨';
+      $('captionCount').textContent='29 / 2.200';$('avatarPreview').textContent='SM';$('heart').textContent='♡';$('heart').style.color='#161616';
+      [...$('viewSwitch').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.view==='auto'));
+      render();showToast('Prévia limpa.');
+    });
+    document.addEventListener('keydown',e=>{
+      if(e.key==='ArrowLeft'&&effectiveCarousel())go(-1);
+      if(e.key==='ArrowRight'&&effectiveCarousel())go(1);
+    });
+    $('captionCount').textContent=`${$('captionInput').value.length} / 2.200`;
+    render();
+  </script>
+</body>
+</html>
