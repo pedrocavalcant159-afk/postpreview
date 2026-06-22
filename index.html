@@ -128,7 +128,7 @@
     .more{font-size:21px;letter-spacing:1px;line-height:1;transform:translateY(-3px)}
     .media-stage{
       background:#f0f0f1; position:relative; width:100%; overflow:hidden;
-      display:grid;place-items:center;
+      display:grid;place-items:center; touch-action:pan-y;
     }
     .media-stage.ratio-square{aspect-ratio:1/1}
     .media-stage.ratio-portrait{aspect-ratio:4/5}
@@ -879,6 +879,44 @@ render();
       if(e.key==='ArrowLeft'&&effectiveCarousel())go(-1);
       if(e.key==='ArrowRight'&&effectiveCarousel())go(1);
     });
+
+    // Navegação por gesto: arraste a imagem para a esquerda ou direita, como no Instagram.
+    let swipeStartX = null;
+    let swipeStartY = null;
+    let isSwiping = false;
+
+    stage.addEventListener('pointerdown', (event) => {
+      if(!effectiveCarousel()) return;
+      swipeStartX = event.clientX;
+      swipeStartY = event.clientY;
+      isSwiping = true;
+      stage.setPointerCapture?.(event.pointerId);
+    });
+
+    stage.addEventListener('pointerup', (event) => {
+      if(!isSwiping || swipeStartX === null || swipeStartY === null) return;
+
+      const deltaX = event.clientX - swipeStartX;
+      const deltaY = event.clientY - swipeStartY;
+      const threshold = 42;
+
+      // Só troca o card quando o gesto for principalmente horizontal.
+      if(Math.abs(deltaX) > threshold && Math.abs(deltaX) > Math.abs(deltaY)){
+        if(deltaX < 0) go(1);
+        else go(-1);
+      }
+
+      swipeStartX = null;
+      swipeStartY = null;
+      isSwiping = false;
+    });
+
+    stage.addEventListener('pointercancel', () => {
+      swipeStartX = null;
+      swipeStartY = null;
+      isSwiping = false;
+    });
+
     initializeFirebase();
     const sharedViewId = new URLSearchParams(window.location.search).get('view');
     if(sharedViewId){
