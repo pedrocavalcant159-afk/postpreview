@@ -1,13 +1,16 @@
-COMO ATIVAR OS LINKS DE VISUALIZAÇÃO
+VERSÃO FIRESTORE GRÁTIS — LINK DE APROVAÇÃO
 
-1. No Firebase Console, use um projeto separado ou o seu projeto atual.
-2. Ative:
-   - Authentication > Sign-in method > Anônimo
-   - Firestore Database
-   - Storage
-3. Cole as regras do arquivo REGRAS-FIREBASE.txt no Firestore e no Storage.
-4. No arquivo firebase-config.js, cole os dados de configuração do seu app web no Firebase.
-5. Envie index.html e firebase-config.js para a raiz do repositório do GitHub Pages.
+1. Suba index.html e firebase-config.js para a raiz do GitHub Pages.
+2. Em Firebase Console > Firestore Database > Regras, substitua as regras pelo conteúdo de REGRAS-FIREBASE.txt e publique.
+3. Mantenha Authentication > Sign-in method > Anônimo ativado.
+4. Não é necessário usar Firebase Storage.
 
-Depois disso, o botão “Gerar link” salva as imagens online e copia um link.
-Quem abrir esse link só vê a prévia. Não aparecem campos de edição ou upload.
+Como funciona:
+- Ao clicar em “Gerar link”, o site comprime os cards no navegador.
+- Cada card é salvo em um documento separado no Firestore.
+- O link abre somente a visualização, sem edição.
+
+Limites práticos desta versão:
+- Até 10 cards.
+- As imagens são convertidas para JPG e comprimidas para manter cada documento abaixo do limite do Firestore.
+- Para preservar qualidade, prefira artes de até 1600 px no lado maior.

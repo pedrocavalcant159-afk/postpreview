@@ -325,16 +325,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
   <script>
     const state = { images: [], current: 0, avatar: null, view: 'auto', liked: false };
     const $ = (id) => document.getElementById(id);
 
-    // Configuração externa: mantenha os dados do Firebase no arquivo firebase-config.js.
+    // Esta versão usa APENAS Authentication anônimo + Firestore.
+    // As imagens são comprimidas no navegador antes de serem salvas.
     const firebaseConfig = window.POST_PREVIEW_FIREBASE_CONFIG || null;
     let firebaseReady = false;
     let db = null;
-    let storage = null;
 
     function isValidFirebaseConfig(config){
       return Boolean(
@@ -342,7 +341,6 @@
         config.apiKey &&
         config.authDomain &&
         config.projectId &&
-        config.storageBucket &&
         config.apiKey !== 'COLE_AQUI_SUA_API_KEY'
       );
     }
@@ -352,7 +350,6 @@
       try{
         if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
-        storage = firebase.storage();
         firebaseReady = true;
         return true;
       }catch(error){
@@ -377,38 +374,96 @@
         .slice(0,80);
     }
 
-    async function dataUrlToBlob(dataUrl){
-      const response = await fetch(dataUrl);
-      return await response.blob();
-    }
-
-    async function uploadDataUrl(dataUrl, path, fallbackType='image/jpeg'){
-      const blob = await dataUrlToBlob(dataUrl);
-      const ref = storage.ref().child(path);
-      const task = await ref.put(blob, { contentType: blob.type || fallbackType });
-      return await task.ref.getDownloadURL();
-    }
-
     function getShareUrl(shareId){
       const base = `${window.location.origin}${window.location.pathname}`;
       return `${base}?view=${encodeURIComponent(shareId)}`;
     }
 
     function showShareDialog(link){
-      let copied = false;
       const copy = async () => {
         try{
           await navigator.clipboard.writeText(link);
-          copied = true;
           showToast('Link copiado. Agora é só enviar para a pessoa.');
         }catch(error){
           window.prompt('Copie este link:', link);
         }
       };
       copy();
-      setTimeout(() => {
-        if(!copied) showToast('Link criado. Copie e envie para a pessoa.');
-      }, 300);
+    }
+
+    function loadImageFromDataUrl(dataUrl){
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Não foi possível preparar uma das imagens.'));
+        image.src = dataUrl;
+      });
+    }
+
+    function canvasToBlob(canvas, quality){
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+          if(blob) resolve(blob);
+          else reject(new Error('Não foi possível comprimir a imagem.'));
+        }, 'image/jpeg', quality);
+      });
+    }
+
+    // Firestore aceita no máximo 1 MiB por documento.
+    // Cada imagem vai para um documento próprio, com folga abaixo desse limite.
+    async function compressImageForFirestore(dataUrl, maxSide = 1600, targetBytes = 620 * 1024){
+      const image = await loadImageFromDataUrl(dataUrl);
+      let sourceWidth = image.naturalWidth || image.width;
+      let sourceHeight = image.naturalHeight || image.height;
+      let scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+
+      for(let round = 0; round < 6; round++){
+        const width = Math.max(320, Math.round(sourceWidth * scale));
+        const height = Math.max(320, Math.round(sourceHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d', { alpha: false });
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+
+        for(let quality = 0.86; quality >= 0.42; quality -= 0.08){
+          const blob = await canvasToBlob(canvas, quality);
+          if(blob.size <= targetBytes){
+            const bytes = new Uint8Array(await blob.arrayBuffer());
+            return {
+              bytes,
+              mime: 'image/jpeg',
+              width,
+              height,
+              size: blob.size
+            };
+          }
+        }
+        scale *= 0.78;
+      }
+
+      throw new Error('Uma imagem ficou grande demais. Use uma imagem mais leve ou reduza a resolução antes de enviar.');
+    }
+
+    function firestoreBlobToObjectUrl(value, mime = 'image/jpeg'){
+      if(!value || typeof value.toUint8Array !== 'function') return '';
+      const bytes = value.toUint8Array();
+      return URL.createObjectURL(new Blob([bytes], { type: mime }));
+    }
+
+    function friendlyShareError(error){
+      if(error?.code === 'permission-denied'){
+        return 'Permissão negada. Cole as novas regras do Firestore e publique.';
+      }
+      if(error?.code === 'unauthenticated'){
+        return 'Ative o login anônimo em Authentication no Firebase.';
+      }
+      if(error?.code === 'resource-exhausted'){
+        return 'O limite gratuito do Firestore foi atingido por enquanto.';
+      }
+      return 'Não foi possível gerar o link. Confira as regras do Firestore.';
     }
 
     async function createLiveShareLink(){
@@ -424,7 +479,7 @@
       const button = $('shareBtn');
       const originalText = button.textContent;
       button.disabled = true;
-      button.textContent = 'Gerando link...';
+      button.textContent = 'Preparando imagens...';
 
       try{
         const user = await ensureAnonymousSession();
@@ -435,39 +490,55 @@
         const caption = $('captionInput').value || '';
         const ratio = $('ratioSelect').value;
 
-        const imageUrls = [];
-        for(let index = 0; index < state.images.length; index++){
-          const item = state.images[index];
-          const imagePath = `shares/${user.uid}/${shareId}/images/${String(index + 1).padStart(2,'0')}-${sanitizeFileName(item.name)}`;
-          imageUrls.push(await uploadDataUrl(item.src, imagePath));
-        }
-
-        let avatarUrl = '';
-        if(state.avatar){
-          avatarUrl = await uploadDataUrl(
-            state.avatar,
-            `shares/${user.uid}/${shareId}/avatar.jpg`
-          );
-        }
-
+        // O documento principal nasce privado. Só fica público depois de todos os cards terem sido gravados.
         await shareRef.set({
-          public: true,
+          public: false,
           ownerId: user.uid,
           account,
           location,
           caption,
           ratio,
-          images: imageUrls,
-          avatar: avatarUrl,
+          imageCount: state.images.length,
+          avatar: null,
+          avatarMime: '',
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          version: 1
+          version: 2
+        });
+
+        for(let index = 0; index < state.images.length; index++){
+          button.textContent = `Salvando card ${index + 1} de ${state.images.length}...`;
+          const item = state.images[index];
+          const compressed = await compressImageForFirestore(item.src);
+          await shareRef.collection('images').doc(String(index + 1).padStart(2, '0')).set({
+            order: index,
+            name: sanitizeFileName(item.name),
+            mime: compressed.mime,
+            width: compressed.width,
+            height: compressed.height,
+            data: firebase.firestore.Blob.fromUint8Array(compressed.bytes)
+          });
+        }
+
+        let avatarData = null;
+        let avatarMime = '';
+        if(state.avatar){
+          button.textContent = 'Salvando perfil...';
+          const avatar = await compressImageForFirestore(state.avatar, 360, 100 * 1024);
+          avatarData = firebase.firestore.Blob.fromUint8Array(avatar.bytes);
+          avatarMime = avatar.mime;
+        }
+
+        await shareRef.update({
+          avatar: avatarData,
+          avatarMime,
+          public: true
         });
 
         const link = getShareUrl(shareId);
         showShareDialog(link);
       }catch(error){
         console.error(error);
-        showToast('Não foi possível gerar o link. Confira o Firebase e as regras.');
+        showToast(friendlyShareError(error));
       }finally{
         button.disabled = false;
         button.textContent = originalText;
@@ -492,18 +563,33 @@
       }
 
       try{
-        const result = await db.collection('shares').doc(shareId).get();
+        const shareRef = db.collection('shares').doc(shareId);
+        const result = await shareRef.get();
         if(!result.exists || !result.data().public){
           throw new Error('Compartilhamento não encontrado.');
         }
+
         const data = result.data();
-        state.images = (data.images || []).map((src, index) => ({
-          name: `Card ${index + 1}`,
-          src,
-          size: 0
-        }));
+        const imageResult = await shareRef.collection('images').orderBy('order', 'asc').get();
+        if(imageResult.empty){
+          throw new Error('Nenhuma imagem encontrada.');
+        }
+
+        state.images = imageResult.docs.map((document, index) => {
+          const image = document.data();
+          return {
+            name: image.name || `Card ${index + 1}`,
+            src: firestoreBlobToObjectUrl(image.data, image.mime),
+            size: 0
+          };
+        }).filter(image => image.src);
+
+        if(!state.images.length){
+          throw new Error('Não foi possível carregar as imagens.');
+        }
+
         state.current = 0;
-        state.avatar = data.avatar || null;
+        state.avatar = data.avatar ? firestoreBlobToObjectUrl(data.avatar, data.avatarMime) : null;
         state.view = state.images.length > 1 ? 'carousel' : 'single';
         state.liked = false;
 
