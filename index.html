@@ -143,7 +143,9 @@
     .placeholder{
       position:absolute; inset:0; z-index:1; display:grid; place-items:center;
       color:#aaa; text-align:center; padding:25px; font-size:13px; line-height:1.5;
+      pointer-events:none;
     }
+    .placeholder[hidden]{display:none !important}
     .placeholder span{display:block;font-size:33px;margin-bottom:7px}
     .carousel-nav{
       position:absolute; top:50%; transform:translateY(-50%); z-index:3;
@@ -1027,4 +1029,4 @@ render();
     }
   </script>
 </body>
-</html>
+</html>s
