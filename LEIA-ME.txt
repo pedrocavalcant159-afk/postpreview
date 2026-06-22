@@ -1,0 +1,13 @@
+COMO ATIVAR OS LINKS DE VISUALIZAÇÃO
+
+1. No Firebase Console, use um projeto separado ou o seu projeto atual.
+2. Ative:
+   - Authentication > Sign-in method > Anônimo
+   - Firestore Database
+   - Storage
+3. Cole as regras do arquivo REGRAS-FIREBASE.txt no Firestore e no Storage.
+4. No arquivo firebase-config.js, cole os dados de configuração do seu app web no Firebase.
+5. Envie index.html e firebase-config.js para a raiz do repositório do GitHub Pages.
+
+Depois disso, o botão “Gerar link” salva as imagens online e copia um link.
+Quem abrir esse link só vê a prévia. Não aparecem campos de edição ou upload.

@@ -170,6 +170,14 @@
       opacity:0; transition:.25s; z-index:20;
     }
     .toast.show{transform:translate(-50%,0);opacity:1}
+    body.readonly-mode .app{max-width:670px}
+    body.readonly-mode .workspace{grid-template-columns:1fr}
+    body.readonly-mode .controls{display:none}
+    body.readonly-mode .preview-panel{min-height:auto}
+    body.readonly-mode #shareBtn,body.readonly-mode #resetBtn{display:none}
+    body.readonly-mode .preview-head{justify-content:center;text-align:center}
+    body.readonly-mode .preview-head p{display:none}
+    body.readonly-mode .preview-head .panel-title{display:block;font-size:14px}
     @media (max-width:960px){
       .app{padding:20px 14px 32px}
       header{margin-bottom:16px}
@@ -265,7 +273,7 @@
             <p>Use as setas da imagem para navegar entre os cards.</p>
           </div>
           <div style="display:flex; align-items:center; gap:9px">
-            <button class="upload-button" type="button" id="shareBtn" style="margin:0;padding:8px 11px;background:#171717">↗ Baixar visualização</button>
+            <button class="upload-button" type="button" id="shareBtn" style="margin:0;padding:8px 11px;background:#171717">↗ Gerar link</button>
             <button class="reset" type="button" id="resetBtn">Limpar tudo</button>
           </div>
         </div>
@@ -313,9 +321,218 @@
   </main>
   <div class="toast" id="toast"></div>
 
+  <script src="firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
   <script>
     const state = { images: [], current: 0, avatar: null, view: 'auto', liked: false };
     const $ = (id) => document.getElementById(id);
+
+    // Configuração externa: mantenha os dados do Firebase no arquivo firebase-config.js.
+    const firebaseConfig = window.POST_PREVIEW_FIREBASE_CONFIG || null;
+    let firebaseReady = false;
+    let db = null;
+    let storage = null;
+
+    function isValidFirebaseConfig(config){
+      return Boolean(
+        config &&
+        config.apiKey &&
+        config.authDomain &&
+        config.projectId &&
+        config.storageBucket &&
+        config.apiKey !== 'COLE_AQUI_SUA_API_KEY'
+      );
+    }
+
+    function initializeFirebase(){
+      if(!isValidFirebaseConfig(firebaseConfig)) return false;
+      try{
+        if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        storage = firebase.storage();
+        firebaseReady = true;
+        return true;
+      }catch(error){
+        console.error('Erro ao iniciar Firebase:', error);
+        return false;
+      }
+    }
+
+    async function ensureAnonymousSession(){
+      if(!firebaseReady) throw new Error('Firebase não está configurado.');
+      const current = firebase.auth().currentUser;
+      if(current) return current;
+      const credential = await firebase.auth().signInAnonymously();
+      return credential.user;
+    }
+
+    function sanitizeFileName(name){
+      return String(name || 'imagem')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-zA-Z0-9._-]/g,'-')
+        .replace(/-+/g,'-')
+        .slice(0,80);
+    }
+
+    async function dataUrlToBlob(dataUrl){
+      const response = await fetch(dataUrl);
+      return await response.blob();
+    }
+
+    async function uploadDataUrl(dataUrl, path, fallbackType='image/jpeg'){
+      const blob = await dataUrlToBlob(dataUrl);
+      const ref = storage.ref().child(path);
+      const task = await ref.put(blob, { contentType: blob.type || fallbackType });
+      return await task.ref.getDownloadURL();
+    }
+
+    function getShareUrl(shareId){
+      const base = `${window.location.origin}${window.location.pathname}`;
+      return `${base}?view=${encodeURIComponent(shareId)}`;
+    }
+
+    function showShareDialog(link){
+      let copied = false;
+      const copy = async () => {
+        try{
+          await navigator.clipboard.writeText(link);
+          copied = true;
+          showToast('Link copiado. Agora é só enviar para a pessoa.');
+        }catch(error){
+          window.prompt('Copie este link:', link);
+        }
+      };
+      copy();
+      setTimeout(() => {
+        if(!copied) showToast('Link criado. Copie e envie para a pessoa.');
+      }, 300);
+    }
+
+    async function createLiveShareLink(){
+      if(!state.images.length){
+        showToast('Envie pelo menos uma imagem antes de gerar o link.');
+        return;
+      }
+      if(!firebaseReady){
+        showToast('Configure o arquivo firebase-config.js para ativar os links.');
+        return;
+      }
+
+      const button = $('shareBtn');
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Gerando link...';
+
+      try{
+        const user = await ensureAnonymousSession();
+        const shareRef = db.collection('shares').doc();
+        const shareId = shareRef.id;
+        const account = $('accountInput').value.trim() || 'sua_marca';
+        const location = $('locationInput').value.trim();
+        const caption = $('captionInput').value || '';
+        const ratio = $('ratioSelect').value;
+
+        const imageUrls = [];
+        for(let index = 0; index < state.images.length; index++){
+          const item = state.images[index];
+          const imagePath = `shares/${user.uid}/${shareId}/images/${String(index + 1).padStart(2,'0')}-${sanitizeFileName(item.name)}`;
+          imageUrls.push(await uploadDataUrl(item.src, imagePath));
+        }
+
+        let avatarUrl = '';
+        if(state.avatar){
+          avatarUrl = await uploadDataUrl(
+            state.avatar,
+            `shares/${user.uid}/${shareId}/avatar.jpg`
+          );
+        }
+
+        await shareRef.set({
+          public: true,
+          ownerId: user.uid,
+          account,
+          location,
+          caption,
+          ratio,
+          images: imageUrls,
+          avatar: avatarUrl,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          version: 1
+        });
+
+        const link = getShareUrl(shareId);
+        showShareDialog(link);
+      }catch(error){
+        console.error(error);
+        showToast('Não foi possível gerar o link. Confira o Firebase e as regras.');
+      }finally{
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    async function loadSharedView(shareId){
+      document.body.classList.add('readonly-mode');
+      $('usernamePreview').textContent = 'Carregando prévia...';
+      $('captionUser').textContent = '';
+      $('captionPreview').textContent = 'Aguarde enquanto a publicação é carregada.';
+      $('locationPreview').hidden = true;
+      $('shareBtn').hidden = true;
+      $('resetBtn').hidden = true;
+      const title = document.querySelector('.preview-head .panel-title');
+      if(title) title.textContent = 'Visualização do post · somente leitura';
+
+      if(!firebaseReady){
+        $('usernamePreview').textContent = 'Link indisponível';
+        $('captionPreview').textContent = 'A configuração deste site não está pronta para abrir links compartilhados.';
+        return;
+      }
+
+      try{
+        const result = await db.collection('shares').doc(shareId).get();
+        if(!result.exists || !result.data().public){
+          throw new Error('Compartilhamento não encontrado.');
+        }
+        const data = result.data();
+        state.images = (data.images || []).map((src, index) => ({
+          name: `Card ${index + 1}`,
+          src,
+          size: 0
+        }));
+        state.current = 0;
+        state.avatar = data.avatar || null;
+        state.view = state.images.length > 1 ? 'carousel' : 'single';
+        state.liked = false;
+
+        $('accountInput').value = data.account || 'sua_marca';
+        $('locationInput').value = data.location || '';
+        $('captionInput').value = data.caption || '';
+        $('ratioSelect').value = ['square','portrait','landscape'].includes(data.ratio) ? data.ratio : 'square';
+
+        $('usernamePreview').textContent = data.account || 'sua_marca';
+        $('captionUser').textContent = data.account || 'sua_marca';
+        $('captionPreview').textContent = data.caption || '';
+        $('locationPreview').textContent = data.location || '';
+        $('locationPreview').hidden = !data.location;
+
+        if(state.avatar){
+          $('avatarPreview').innerHTML = `<img src="${state.avatar}" alt="Foto de perfil">`;
+        }else{
+          $('avatarPreview').textContent = initials(data.account || 'sua_marca');
+        }
+        render();
+      }catch(error){
+        console.error(error);
+        state.images = [];
+        render();
+        $('usernamePreview').textContent = 'Link não encontrado';
+        $('captionUser').textContent = '';
+        $('captionPreview').textContent = 'Este link pode ter sido removido ou está incompleto.';
+      }
+    }
     const input = $('imageInput');
     const dropzone = $('dropzone');
     const mediaList = $('mediaList');
@@ -562,7 +779,7 @@ render();
       showToast('Versão somente visualização baixada.');
     }
 
-    $('shareBtn').addEventListener('click', createReadOnlyPreview);
+    $('shareBtn').addEventListener('click', createLiveShareLink);
 
     $('resetBtn').addEventListener('click',()=>{
       state.images=[];state.current=0;state.avatar=null;state.view='auto';state.liked=false;
@@ -576,8 +793,14 @@ render();
       if(e.key==='ArrowLeft'&&effectiveCarousel())go(-1);
       if(e.key==='ArrowRight'&&effectiveCarousel())go(1);
     });
-    $('captionCount').textContent=`${$('captionInput').value.length} / 2.200`;
-    render();
+    initializeFirebase();
+    const sharedViewId = new URLSearchParams(window.location.search).get('view');
+    if(sharedViewId){
+      loadSharedView(sharedViewId);
+    }else{
+      $('captionCount').textContent=`${$('captionInput').value.length} / 2.200`;
+      render();
+    }
   </script>
 </body>
 </html>
