@@ -111,6 +111,39 @@
     .preview-head p{margin:0;color:var(--muted);font-size:12px}
     .reset{border:0;background:transparent;color:#747474;text-decoration:underline;font-size:12px;padding:5px}
     .simulator-wrap{display:flex;justify-content:center;padding:9px 4px 21px}
+    .single-post-mount{width:100%;display:flex;justify-content:center}
+    .single-post-mount[hidden],.feed-simulation[hidden]{display:none!important}
+    .feed-simulation{
+      width:min(100%,460px); max-height:730px; overflow:auto; background:#fff;
+      border:1px solid #dbdbdb; box-shadow:0 16px 40px rgba(31,28,33,.11);
+      scrollbar-width:thin; scrollbar-color:#d9d9dc transparent;
+    }
+    .feed-topbar{
+      height:52px; display:flex; align-items:center; justify-content:space-between;
+      padding:0 14px; border-bottom:1px solid #ededee; position:sticky; top:0; z-index:8;
+      background:rgba(255,255,255,.96); backdrop-filter:blur(8px);
+    }
+    .feed-wordmark{font-family:Georgia,serif;font-style:italic;font-size:21px;letter-spacing:-1px}
+    .feed-top-icons{font-size:20px;letter-spacing:8px;line-height:1}
+    .feed-stories{display:flex;gap:12px;overflow:hidden;padding:12px 13px 13px;border-bottom:1px solid #ededee}
+    .feed-story{width:52px;flex:0 0 52px;text-align:center;font-size:9px;color:#555}
+    .feed-story-ring{width:48px;height:48px;margin:0 auto 5px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#ffbd72,#ff527d 55%,#8a3ce9)}
+    .feed-story-photo{width:100%;height:100%;border-radius:50%;background:#f0eef5;border:2px solid #fff}
+    .feed-story:nth-child(2) .feed-story-photo{background:linear-gradient(140deg,#e8efea 0%,#9ab79e 100%)}
+    .feed-story:nth-child(3) .feed-story-photo{background:linear-gradient(140deg,#f2d6c4 0%,#d18979 100%)}
+    .feed-story:nth-child(4) .feed-story-photo{background:linear-gradient(140deg,#d6e0f0 0%,#7795c4 100%)}
+    .feed-story:nth-child(5) .feed-story-photo{background:linear-gradient(140deg,#f2e7be 0%,#c8a962 100%)}
+    .feed-context-post{border-bottom:1px solid #ececee;background:#fff}
+    .feed-context-head{height:48px;display:flex;align-items:center;gap:9px;padding:0 13px}
+    .feed-context-avatar{width:27px;height:27px;border-radius:50%;background:linear-gradient(145deg,#d9d9dc,#a6a6ad)}
+    .feed-context-lines{display:grid;gap:4px}.feed-context-lines span{display:block;height:6px;border-radius:99px;background:#e5e5e7}.feed-context-lines span:first-child{width:74px}.feed-context-lines span:last-child{width:45px}
+    .feed-context-media{height:178px;background:linear-gradient(135deg,#d9d3c9 0%,#eef0ef 47%,#b7c4c2 100%);position:relative;overflow:hidden}
+    .feed-context-media::before{content:'';position:absolute;width:125px;height:125px;border-radius:50%;background:rgba(255,255,255,.5);top:-34px;left:45px}
+    .feed-context-media::after{content:'';position:absolute;width:220px;height:100px;border-radius:80px;background:rgba(82,110,102,.32);bottom:-45px;right:-26px;transform:rotate(-16deg)}
+    .feed-context-footer{padding:10px 13px 14px}.feed-context-actions{font-size:19px;letter-spacing:9px;color:#555}.feed-context-copy{height:8px;border-radius:99px;background:#ededee;margin-top:10px;width:74%}.feed-context-copy.short{width:44%;margin-top:6px}
+    .feed-your-post-label{display:flex;align-items:center;gap:8px;padding:10px 13px;background:#f8f8f9;color:#69696d;font-size:11px;font-weight:750;border-bottom:1px solid #ececee}
+    .feed-your-post-label span{width:7px;height:7px;border-radius:50%;background:#ff3f76}
+    #feedPostMount .instagram{width:100%;border:0;border-radius:0;box-shadow:none}
     .instagram{
       width:min(100%, 460px); background:white; border:1px solid #dbdbdb; border-radius:2px; overflow:hidden;
       box-shadow:0 16px 40px rgba(31,28,33,.11);
@@ -128,24 +161,17 @@
     .more{font-size:21px;letter-spacing:1px;line-height:1;transform:translateY(-3px)}
     .media-stage{
       background:#f0f0f1; position:relative; width:100%; overflow:hidden;
-      touch-action:pan-y; cursor:grab;
+      display:grid;place-items:center;
     }
-    .media-stage.dragging{cursor:grabbing}
     .media-stage.ratio-square{aspect-ratio:1/1}
     .media-stage.ratio-portrait{aspect-ratio:4/5}
     .media-stage.ratio-landscape{aspect-ratio:1.91/1}
-    .media-track{
-      position:absolute; inset:0; display:flex; width:100%; height:100%;
-      will-change:transform; transition:transform 340ms cubic-bezier(.22,.61,.36,1);
-    }
-    .media-slide{flex:0 0 100%; width:100%; height:100%; overflow:hidden}
-    .media-slide img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;pointer-events:none}
+    .media-stage img{width:100%;height:100%;object-fit:cover;display:block; user-select:none}
     .placeholder{
-      position:absolute; inset:0; z-index:1; display:grid; place-items:center;
       color:#aaa; text-align:center; padding:25px; font-size:13px; line-height:1.5;
       pointer-events:none;
     }
-    .placeholder[hidden]{display:none !important}
+    .placeholder[hidden]{display:none!important}
     .placeholder span{display:block;font-size:33px;margin-bottom:7px}
     .carousel-nav{
       position:absolute; top:50%; transform:translateY(-50%); z-index:3;
@@ -184,9 +210,10 @@
     body.readonly-mode .controls{display:none}
     body.readonly-mode .preview-panel{min-height:auto}
     body.readonly-mode #shareBtn,body.readonly-mode #resetBtn{display:none}
-    body.readonly-mode .preview-head{justify-content:center;text-align:center}
+    body.readonly-mode .preview-head{justify-content:space-between;text-align:left}
     body.readonly-mode .preview-head p{display:none}
     body.readonly-mode .preview-head .panel-title{display:block;font-size:14px}
+    body.feed-mode .preview-footer{display:none}
     @media (max-width:960px){
       .app{padding:20px 14px 32px}
       header{margin-bottom:16px}
@@ -282,12 +309,14 @@
             <p>Use as setas da imagem para navegar entre os cards.</p>
           </div>
           <div style="display:flex; align-items:center; gap:9px">
+            <button class="upload-button" type="button" id="feedToggleBtn" style="margin:0;padding:8px 11px;background:#f1f1f3;color:#303033">▦ Simular feed</button>
             <button class="upload-button" type="button" id="shareBtn" style="margin:0;padding:8px 11px;background:#171717">↗ Gerar link</button>
             <button class="reset" type="button" id="resetBtn">Limpar tudo</button>
           </div>
         </div>
 
         <div class="simulator-wrap">
+          <div class="single-post-mount" id="singlePostMount">
           <article class="instagram" aria-label="Simulador de publicação do Instagram">
             <div class="ig-profile">
               <div class="avatar"><div class="avatar-inner" id="avatarPreview">SM</div></div>
@@ -299,7 +328,6 @@
             </div>
 
             <div class="media-stage ratio-square" id="mediaStage">
-              <div class="media-track" id="mediaTrack"></div>
               <div class="placeholder" id="placeholder"><span>▧</span>Envie uma ou mais imagens<br>para começar a visualizar.</div>
               <button class="carousel-nav prev" id="prevBtn" type="button" hidden aria-label="Imagem anterior">‹</button>
               <button class="carousel-nav next" id="nextBtn" type="button" hidden aria-label="Próxima imagem">›</button>
@@ -320,6 +348,47 @@
               <div class="time">há alguns segundos</div>
             </div>
           </article>
+          </div>
+
+          <section class="feed-simulation" id="feedSimulation" hidden aria-label="Simulação da publicação no feed">
+            <div class="feed-topbar">
+              <span class="feed-wordmark">instagram</span>
+              <span class="feed-top-icons">♡ ⌁</span>
+            </div>
+            <div class="feed-stories" aria-hidden="true">
+              <div class="feed-story"><div class="feed-story-ring"><div class="feed-story-photo"></div></div>seu_story</div>
+              <div class="feed-story"><div class="feed-story-ring"><div class="feed-story-photo"></div></div>ana</div>
+              <div class="feed-story"><div class="feed-story-ring"><div class="feed-story-photo"></div></div>studio</div>
+              <div class="feed-story"><div class="feed-story-ring"><div class="feed-story-photo"></div></div>marcos</div>
+              <div class="feed-story"><div class="feed-story-ring"><div class="feed-story-photo"></div></div>casa</div>
+            </div>
+            <article class="feed-context-post" aria-hidden="true">
+              <div class="feed-context-head">
+                <div class="feed-context-avatar"></div>
+                <div class="feed-context-lines"><span></span><span></span></div>
+              </div>
+              <div class="feed-context-media"></div>
+              <div class="feed-context-footer">
+                <div class="feed-context-actions">♡ ◯ ⌁</div>
+                <div class="feed-context-copy"></div>
+                <div class="feed-context-copy short"></div>
+              </div>
+            </article>
+            <div class="feed-your-post-label"><span></span>Sua publicação no feed</div>
+            <div id="feedPostMount"></div>
+            <article class="feed-context-post" aria-hidden="true">
+              <div class="feed-context-head">
+                <div class="feed-context-avatar"></div>
+                <div class="feed-context-lines"><span></span><span></span></div>
+              </div>
+              <div class="feed-context-media" style="background:linear-gradient(135deg,#dfe8f7 0%,#b6c9d9 50%,#f0d9be 100%)"></div>
+              <div class="feed-context-footer">
+                <div class="feed-context-actions">♡ ◯ ⌁</div>
+                <div class="feed-context-copy"></div>
+                <div class="feed-context-copy short"></div>
+              </div>
+            </article>
+          </section>
         </div>
         <div class="preview-footer">
           <span class="badge" id="modeBadge">Post único</span>
@@ -335,15 +404,16 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
   <script>
     const state = { images: [], current: 0, avatar: null, view: 'auto', liked: false };
     const $ = (id) => document.getElementById(id);
 
-    // Esta versão usa APENAS Authentication anônimo + Firestore.
-    // As imagens são comprimidas no navegador antes de serem salvas.
+    // Configuração externa: mantenha os dados do Firebase no arquivo firebase-config.js.
     const firebaseConfig = window.POST_PREVIEW_FIREBASE_CONFIG || null;
     let firebaseReady = false;
     let db = null;
+    let storage = null;
 
     function isValidFirebaseConfig(config){
       return Boolean(
@@ -351,6 +421,7 @@
         config.apiKey &&
         config.authDomain &&
         config.projectId &&
+        config.storageBucket &&
         config.apiKey !== 'COLE_AQUI_SUA_API_KEY'
       );
     }
@@ -360,6 +431,7 @@
       try{
         if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
+        storage = firebase.storage();
         firebaseReady = true;
         return true;
       }catch(error){
@@ -384,96 +456,38 @@
         .slice(0,80);
     }
 
+    async function dataUrlToBlob(dataUrl){
+      const response = await fetch(dataUrl);
+      return await response.blob();
+    }
+
+    async function uploadDataUrl(dataUrl, path, fallbackType='image/jpeg'){
+      const blob = await dataUrlToBlob(dataUrl);
+      const ref = storage.ref().child(path);
+      const task = await ref.put(blob, { contentType: blob.type || fallbackType });
+      return await task.ref.getDownloadURL();
+    }
+
     function getShareUrl(shareId){
       const base = `${window.location.origin}${window.location.pathname}`;
       return `${base}?view=${encodeURIComponent(shareId)}`;
     }
 
     function showShareDialog(link){
+      let copied = false;
       const copy = async () => {
         try{
           await navigator.clipboard.writeText(link);
+          copied = true;
           showToast('Link copiado. Agora é só enviar para a pessoa.');
         }catch(error){
           window.prompt('Copie este link:', link);
         }
       };
       copy();
-    }
-
-    function loadImageFromDataUrl(dataUrl){
-      return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = () => reject(new Error('Não foi possível preparar uma das imagens.'));
-        image.src = dataUrl;
-      });
-    }
-
-    function canvasToBlob(canvas, quality){
-      return new Promise((resolve, reject) => {
-        canvas.toBlob(blob => {
-          if(blob) resolve(blob);
-          else reject(new Error('Não foi possível comprimir a imagem.'));
-        }, 'image/jpeg', quality);
-      });
-    }
-
-    // Firestore aceita no máximo 1 MiB por documento.
-    // Cada imagem vai para um documento próprio, com folga abaixo desse limite.
-    async function compressImageForFirestore(dataUrl, maxSide = 1600, targetBytes = 620 * 1024){
-      const image = await loadImageFromDataUrl(dataUrl);
-      let sourceWidth = image.naturalWidth || image.width;
-      let sourceHeight = image.naturalHeight || image.height;
-      let scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
-
-      for(let round = 0; round < 6; round++){
-        const width = Math.max(320, Math.round(sourceWidth * scale));
-        const height = Math.max(320, Math.round(sourceHeight * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const context = canvas.getContext('2d', { alpha: false });
-        context.fillStyle = '#ffffff';
-        context.fillRect(0, 0, width, height);
-        context.drawImage(image, 0, 0, width, height);
-
-        for(let quality = 0.86; quality >= 0.42; quality -= 0.08){
-          const blob = await canvasToBlob(canvas, quality);
-          if(blob.size <= targetBytes){
-            const bytes = new Uint8Array(await blob.arrayBuffer());
-            return {
-              bytes,
-              mime: 'image/jpeg',
-              width,
-              height,
-              size: blob.size
-            };
-          }
-        }
-        scale *= 0.78;
-      }
-
-      throw new Error('Uma imagem ficou grande demais. Use uma imagem mais leve ou reduza a resolução antes de enviar.');
-    }
-
-    function firestoreBlobToObjectUrl(value, mime = 'image/jpeg'){
-      if(!value || typeof value.toUint8Array !== 'function') return '';
-      const bytes = value.toUint8Array();
-      return URL.createObjectURL(new Blob([bytes], { type: mime }));
-    }
-
-    function friendlyShareError(error){
-      if(error?.code === 'permission-denied'){
-        return 'Permissão negada. Cole as novas regras do Firestore e publique.';
-      }
-      if(error?.code === 'unauthenticated'){
-        return 'Ative o login anônimo em Authentication no Firebase.';
-      }
-      if(error?.code === 'resource-exhausted'){
-        return 'O limite gratuito do Firestore foi atingido por enquanto.';
-      }
-      return 'Não foi possível gerar o link. Confira as regras do Firestore.';
+      setTimeout(() => {
+        if(!copied) showToast('Link criado. Copie e envie para a pessoa.');
+      }, 300);
     }
 
     async function createLiveShareLink(){
@@ -489,7 +503,7 @@
       const button = $('shareBtn');
       const originalText = button.textContent;
       button.disabled = true;
-      button.textContent = 'Preparando imagens...';
+      button.textContent = 'Gerando link...';
 
       try{
         const user = await ensureAnonymousSession();
@@ -500,55 +514,39 @@
         const caption = $('captionInput').value || '';
         const ratio = $('ratioSelect').value;
 
-        // O documento principal nasce privado. Só fica público depois de todos os cards terem sido gravados.
+        const imageUrls = [];
+        for(let index = 0; index < state.images.length; index++){
+          const item = state.images[index];
+          const imagePath = `shares/${user.uid}/${shareId}/images/${String(index + 1).padStart(2,'0')}-${sanitizeFileName(item.name)}`;
+          imageUrls.push(await uploadDataUrl(item.src, imagePath));
+        }
+
+        let avatarUrl = '';
+        if(state.avatar){
+          avatarUrl = await uploadDataUrl(
+            state.avatar,
+            `shares/${user.uid}/${shareId}/avatar.jpg`
+          );
+        }
+
         await shareRef.set({
-          public: false,
+          public: true,
           ownerId: user.uid,
           account,
           location,
           caption,
           ratio,
-          imageCount: state.images.length,
-          avatar: null,
-          avatarMime: '',
+          images: imageUrls,
+          avatar: avatarUrl,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          version: 2
-        });
-
-        for(let index = 0; index < state.images.length; index++){
-          button.textContent = `Salvando card ${index + 1} de ${state.images.length}...`;
-          const item = state.images[index];
-          const compressed = await compressImageForFirestore(item.src);
-          await shareRef.collection('images').doc(String(index + 1).padStart(2, '0')).set({
-            order: index,
-            name: sanitizeFileName(item.name),
-            mime: compressed.mime,
-            width: compressed.width,
-            height: compressed.height,
-            data: firebase.firestore.Blob.fromUint8Array(compressed.bytes)
-          });
-        }
-
-        let avatarData = null;
-        let avatarMime = '';
-        if(state.avatar){
-          button.textContent = 'Salvando perfil...';
-          const avatar = await compressImageForFirestore(state.avatar, 360, 100 * 1024);
-          avatarData = firebase.firestore.Blob.fromUint8Array(avatar.bytes);
-          avatarMime = avatar.mime;
-        }
-
-        await shareRef.update({
-          avatar: avatarData,
-          avatarMime,
-          public: true
+          version: 1
         });
 
         const link = getShareUrl(shareId);
         showShareDialog(link);
       }catch(error){
         console.error(error);
-        showToast(friendlyShareError(error));
+        showToast('Não foi possível gerar o link. Confira o Firebase e as regras.');
       }finally{
         button.disabled = false;
         button.textContent = originalText;
@@ -573,33 +571,18 @@
       }
 
       try{
-        const shareRef = db.collection('shares').doc(shareId);
-        const result = await shareRef.get();
+        const result = await db.collection('shares').doc(shareId).get();
         if(!result.exists || !result.data().public){
           throw new Error('Compartilhamento não encontrado.');
         }
-
         const data = result.data();
-        const imageResult = await shareRef.collection('images').orderBy('order', 'asc').get();
-        if(imageResult.empty){
-          throw new Error('Nenhuma imagem encontrada.');
-        }
-
-        state.images = imageResult.docs.map((document, index) => {
-          const image = document.data();
-          return {
-            name: image.name || `Card ${index + 1}`,
-            src: firestoreBlobToObjectUrl(image.data, image.mime),
-            size: 0
-          };
-        }).filter(image => image.src);
-
-        if(!state.images.length){
-          throw new Error('Não foi possível carregar as imagens.');
-        }
-
+        state.images = (data.images || []).map((src, index) => ({
+          name: `Card ${index + 1}`,
+          src,
+          size: 0
+        }));
         state.current = 0;
-        state.avatar = data.avatar ? firestoreBlobToObjectUrl(data.avatar, data.avatarMime) : null;
+        state.avatar = data.avatar || null;
         state.view = state.images.length > 1 ? 'carousel' : 'single';
         state.liked = false;
 
@@ -620,6 +603,9 @@
           $('avatarPreview').textContent = initials(data.account || 'sua_marca');
         }
         render();
+        if(new URLSearchParams(window.location.search).get('mode') === 'feed'){
+          setFeedSimulation(true, false);
+        }
       }catch(error){
         console.error(error);
         state.images = [];
@@ -638,13 +624,12 @@
     const nextBtn = $('nextBtn');
     const count = $('carouselCount');
     const dots = $('dots');
-    const track = $('mediaTrack');
-    let isDraggingCarousel = false;
-    let pointerStartX = 0;
-    let pointerStartY = 0;
-    let pointerLastX = 0;
-    let pointerLastTime = 0;
-    let swipeDirectionLocked = null;
+    const singlePostMount = $('singlePostMount');
+    const feedPostMount = $('feedPostMount');
+    const feedSimulation = $('feedSimulation');
+    const feedToggleBtn = $('feedToggleBtn');
+    const instagramPost = document.querySelector('.instagram');
+    let isFeedMode = false;
 
     function esc(str){
       const el = document.createElement('div'); el.textContent = str; return el.innerHTML;
@@ -663,43 +648,36 @@
       return state.images.length > 1;
     }
 
-    function setTrackPosition(animate = true, dragOffset = 0){
-      if(!track.children.length) return;
-
-      track.style.transition = animate
-        ? 'transform 340ms cubic-bezier(.22,.61,.36,1)'
-        : 'none';
-
-      const base = -state.current * 100;
-      track.style.transform = dragOffset
-        ? `translate3d(calc(${base}% + ${dragOffset}px), 0, 0)`
-        : `translate3d(${base}%, 0, 0)`;
+    function updateSharedViewUrl(enabled){
+      if(!new URLSearchParams(window.location.search).get('view')) return;
+      const url = new URL(window.location.href);
+      if(enabled) url.searchParams.set('mode', 'feed');
+      else url.searchParams.delete('mode');
+      window.history.replaceState({}, '', url);
     }
 
-    function updateCarouselInterface(){
-      const has = state.images.length > 0;
-      const carousel = effectiveCarousel() && state.images.length > 1;
+    function setFeedSimulation(enabled, updateUrl = true){
+      isFeedMode = Boolean(enabled);
+      document.body.classList.toggle('feed-mode', isFeedMode);
 
-      prevBtn.hidden = !carousel || state.current === 0;
-      nextBtn.hidden = !carousel || state.current === state.images.length - 1;
-      count.hidden = !carousel;
-      if(carousel) count.textContent = `${state.current + 1}/${state.images.length}`;
+      if(isFeedMode){
+        feedSimulation.hidden = false;
+        feedPostMount.appendChild(instagramPost);
+        singlePostMount.hidden = true;
+        feedToggleBtn.textContent = '← Ver publicação';
 
-      dots.innerHTML = carousel
-        ? state.images.map((_, i) => `<span class="dot ${i === state.current ? 'active' : ''}"></span>`).join('')
-        : '';
+        window.requestAnimationFrame(() => {
+          const label = document.querySelector('.feed-your-post-label');
+          if(label) feedSimulation.scrollTop = Math.max(0, label.offsetTop - 68);
+        });
+      }else{
+        singlePostMount.hidden = false;
+        singlePostMount.appendChild(instagramPost);
+        feedSimulation.hidden = true;
+        feedToggleBtn.textContent = '▦ Simular feed';
+      }
 
-      $('modeBadge').textContent = carousel ? 'Carrossel' : 'Post único';
-      $('slideBadge').textContent = has ? `Card ${state.current + 1} de ${state.images.length}` : 'Sem imagens';
-    }
-
-    function buildTrack(){
-      track.innerHTML = state.images.map((image, index) => `
-        <div class="media-slide">
-          <img src="${image.src}" alt="Card ${index + 1} da publicação" draggable="false">
-        </div>
-      `).join('');
-      setTrackPosition(false);
+      if(updateUrl) updateSharedViewUrl(isFeedMode);
     }
     function applyImages(files){
       const valid = Array.from(files).filter(f => /^image\/(png|jpeg|webp)$/.test(f.type));
@@ -741,38 +719,40 @@
         </div>`).join('');
     }
     function renderStage(){
-      const ratio = $('ratioSelect').value;
-      stage.className = 'media-stage ratio-' + ratio;
-      const has = state.images.length > 0;
-
-      placeholder.hidden = has;
+      const r=$('ratioSelect').value;
+      stage.className='media-stage ratio-'+r;
+      const has=state.images.length>0;
       if(!has){
-        track.innerHTML = '';
-        track.style.transform = 'translate3d(0,0,0)';
+        placeholder.hidden=false;
+        [...stage.querySelectorAll('.stage-image')].forEach(e=>e.remove());
       }else{
-        buildTrack();
+        placeholder.hidden=true;
+        let image=stage.querySelector('.stage-image');
+        if(!image){image=document.createElement('img');image.className='stage-image';image.alt='Imagem do post';stage.prepend(image);}
+        image.src=state.images[state.current].src;
       }
-
-      updateCarouselInterface();
-
-      const formats = {square:'Formato 1:1',portrait:'Formato 4:5',landscape:'Formato 1.91:1'};
-      $('formatBadge').textContent = formats[ratio];
+      const carousel=effectiveCarousel() && state.images.length>1;
+      // No primeiro card não é possível voltar; no último, não é possível avançar.
+      prevBtn.hidden=!carousel || state.current===0;
+      nextBtn.hidden=!carousel || state.current===state.images.length-1;
+      count.hidden=!carousel;
+      if(carousel) count.textContent=`${state.current+1}/${state.images.length}`;
+      dots.innerHTML=carousel?state.images.map((_,i)=>`<span class="dot ${i===state.current?'active':''}"></span>`).join(''):'';
+      $('modeBadge').textContent=carousel?'Carrossel':'Post único';
+      $('slideBadge').textContent=has?`Card ${state.current+1} de ${state.images.length}`:'Sem imagens';
+      const formats={square:'Formato 1:1',portrait:'Formato 4:5',landscape:'Formato 1.91:1'};
+      $('formatBadge').textContent=formats[r];
     }
-
     function render(){
-      if(state.current > state.images.length - 1) state.current = Math.max(0, state.images.length - 1);
-      renderMediaList();
-      renderStage();
+      if(state.current>state.images.length-1) state.current=Math.max(0,state.images.length-1);
+      renderMediaList();renderStage();
     }
-
     function go(direction){
-      if(!state.images.length) return;
+      if(!state.images.length)return;
       const nextIndex = state.current + direction;
       if(nextIndex < 0 || nextIndex >= state.images.length) return;
-
       state.current = nextIndex;
-      updateCarouselInterface();
-      setTrackPosition(true);
+      renderStage();
     }
 
     $('uploadBtn').addEventListener('click',()=>input.click());
@@ -922,6 +902,7 @@ render();
     $('shareBtn').addEventListener('click', createLiveShareLink);
 
     $('resetBtn').addEventListener('click',()=>{
+      if(isFeedMode) setFeedSimulation(false);
       state.images=[];state.current=0;state.avatar=null;state.view='auto';state.liked=false;
       $('accountInput').value='sua_marca';$('locationInput').value='';$('captionInput').value='Sua legenda aparece aqui. ✨';$('ratioSelect').value='square';
       $('usernamePreview').textContent='sua_marca';$('captionUser').textContent='sua_marca';$('locationPreview').hidden=true;$('captionPreview').textContent='Sua legenda aparece aqui. ✨';
@@ -929,96 +910,14 @@ render();
       [...$('viewSwitch').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.view==='auto'));
       render();showToast('Prévia limpa.');
     });
+    feedToggleBtn.addEventListener('click', () => {
+      setFeedSimulation(!isFeedMode);
+    });
+
     document.addEventListener('keydown',e=>{
       if(e.key==='ArrowLeft'&&effectiveCarousel())go(-1);
       if(e.key==='ArrowRight'&&effectiveCarousel())go(1);
     });
-
-    // Deslizamento contínuo: o próximo card aparece enquanto a pessoa arrasta.
-    stage.addEventListener('pointerdown', (event) => {
-      if(!effectiveCarousel() || state.images.length < 2) return;
-      if(event.target.closest('button')) return;
-
-      isDraggingCarousel = true;
-      swipeDirectionLocked = null;
-      pointerStartX = event.clientX;
-      pointerStartY = event.clientY;
-      pointerLastX = event.clientX;
-      pointerLastTime = performance.now();
-
-      stage.classList.add('dragging');
-      stage.setPointerCapture?.(event.pointerId);
-    });
-
-    stage.addEventListener('pointermove', (event) => {
-      if(!isDraggingCarousel) return;
-
-      const deltaX = event.clientX - pointerStartX;
-      const deltaY = event.clientY - pointerStartY;
-
-      if(!swipeDirectionLocked && (Math.abs(deltaX) > 7 || Math.abs(deltaY) > 7)){
-        swipeDirectionLocked = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
-      }
-      if(swipeDirectionLocked !== 'horizontal') return;
-
-      event.preventDefault();
-
-      let visibleOffset = deltaX;
-      const atFirst = state.current === 0;
-      const atLast = state.current === state.images.length - 1;
-
-      // Resistência no primeiro e no último card, sem trocar para fora da lista.
-      if((atFirst && deltaX > 0) || (atLast && deltaX < 0)){
-        visibleOffset *= 0.27;
-      }
-
-      pointerLastX = event.clientX;
-      pointerLastTime = performance.now();
-      setTrackPosition(false, visibleOffset);
-    });
-
-    function finishCarouselDrag(event){
-      if(!isDraggingCarousel) return;
-
-      const deltaX = event.clientX - pointerStartX;
-      const deltaY = event.clientY - pointerStartY;
-      const elapsed = Math.max(1, performance.now() - pointerLastTime);
-      const velocity = (event.clientX - pointerLastX) / elapsed;
-      const threshold = Math.max(48, stage.clientWidth * 0.13);
-      const horizontalGesture = swipeDirectionLocked === 'horizontal'
-        && Math.abs(deltaX) > Math.abs(deltaY);
-
-      isDraggingCarousel = false;
-      stage.classList.remove('dragging');
-
-      if(horizontalGesture){
-        if((deltaX < -threshold || velocity < -0.45) && state.current < state.images.length - 1){
-          go(1);
-        }else if((deltaX > threshold || velocity > 0.45) && state.current > 0){
-          go(-1);
-        }else{
-          setTrackPosition(true);
-        }
-      }else{
-        setTrackPosition(true);
-      }
-
-      swipeDirectionLocked = null;
-    }
-
-    stage.addEventListener('pointerup', finishCarouselDrag);
-    stage.addEventListener('pointercancel', () => {
-      if(!isDraggingCarousel) return;
-      isDraggingCarousel = false;
-      swipeDirectionLocked = null;
-      stage.classList.remove('dragging');
-      setTrackPosition(true);
-    });
-
-    window.addEventListener('resize', () => {
-      if(!isDraggingCarousel) setTrackPosition(false);
-    });
-
     initializeFirebase();
     const sharedViewId = new URLSearchParams(window.location.search).get('view');
     if(sharedViewId){
@@ -1029,4 +928,4 @@ render();
     }
   </script>
 </body>
-</html>s
+</html>
