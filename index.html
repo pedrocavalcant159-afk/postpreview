@@ -194,6 +194,7 @@
       background:#06090f; color:#f7f7f8; border:1px solid #171c23;
       box-shadow:0 16px 40px rgba(10,14,20,.22);
       scrollbar-width:thin; scrollbar-color:#3a414b transparent;
+      position:relative;
     }
     .simulator-wrap.profile-view-active{display:flex;justify-content:center}
     .simulator-wrap.profile-view-active .instagram{display:none}
@@ -205,7 +206,7 @@
     .profile-topbar-left,.profile-topbar-right{display:flex;align-items:center;gap:18px}
     .profile-back{font-size:34px;line-height:1;transform:translateY(-2px)}
     .profile-handle{font-size:16px;font-weight:850}
-    .profile-icons{font-size:18px;letter-spacing:0;display:flex;gap:18px;align-items:center}
+    .profile-icons{font-size:18px;display:flex;gap:18px;align-items:center;line-height:1}
     .profile-summary{display:grid;grid-template-columns:82px 1fr;gap:15px;padding:18px 15px 13px;align-items:center}
     .profile-avatar{
       width:76px;height:76px;border-radius:50%;padding:3px;
@@ -230,10 +231,23 @@
       width:34px;height:34px;border-radius:50%;border:2px solid #06090f;
       background:linear-gradient(145deg,#665142,#2d241d);margin-left:-8px;display:block;
     }
+    .profile-mutual-faces span:first-child{margin-left:0}
     .profile-mutual-faces span:nth-child(2){background:linear-gradient(145deg,#6b6f78,#2a3038)}
     .profile-mutual-faces span:nth-child(3){background:linear-gradient(145deg,#8f765d,#3a2c22)}
     .profile-mutual-text{font-size:11px;line-height:1.35;color:#eceff3}
     .profile-mutual-text strong{font-weight:850}
+    .profile-grid-item{cursor:pointer}
+    .profile-post-detail{position:absolute;inset:0;background:#06090f;z-index:20;display:none;overflow:auto}
+    .profile-post-detail.open{display:block}
+    .profile-post-detail-head{
+      height:58px;display:flex;align-items:center;justify-content:space-between;
+      padding:0 14px;position:sticky;top:0;background:rgba(6,9,15,.97);backdrop-filter:blur(8px);border-bottom:1px solid #171c23;z-index:3
+    }
+    .profile-post-detail-head .left{display:flex;align-items:center;gap:14px;font-size:16px;font-weight:800}
+    .profile-post-detail-close{font-size:34px;line-height:1;cursor:pointer}
+    .profile-post-detail-body{padding-bottom:18px}
+    .profile-post-detail-caption{padding:12px 14px 0;font-size:12px;line-height:1.45;color:#eef0f2;white-space:pre-wrap}
+    .profile-post-detail-meta{padding:8px 14px 0;font-size:10px;color:#9ea5af;text-transform:uppercase;letter-spacing:.35px}
     .profile-actions{display:grid;grid-template-columns:1fr 1fr 54px;gap:8px;padding:14px 15px 15px}
     .profile-actions button{
       min-height:42px;border:0;border-radius:10px;background:#262b33;color:#f4f5f6;
@@ -479,9 +493,48 @@
 
             <div class="profile-grid" id="profileGridPreview"></div>
             <div class="profile-caption">Prévia de como a nova publicação aparece na grade do perfil.</div>
+
+            <div class="profile-post-detail" id="profilePostDetail">
+              <div class="profile-post-detail-head">
+                <div class="left"><span class="profile-post-detail-close" id="profilePostDetailClose">←</span><span>Publicação</span></div>
+                <div>⋮</div>
+              </div>
+              <div class="profile-post-detail-body">
+                <article class="instagram" id="profileDetailPost" aria-label="Publicação aberta a partir da grade">
+                  <div class="ig-profile">
+                    <div class="avatar"><div class="avatar-inner" id="detailAvatarPreview">SM</div></div>
+                    <div class="ig-user">
+                      <div class="ig-name" id="detailUsernamePreview">sua_marca</div>
+                      <div class="ig-location" id="detailLocationPreview" hidden></div>
+                    </div>
+                    <div class="more">•••</div>
+                  </div>
+
+                  <div class="media-stage ratio-square" id="detailMediaStage">
+                    <div class="media-track" id="detailMediaTrack"></div>
+                    <button class="carousel-nav prev" id="detailPrevBtn" type="button" hidden aria-label="Imagem anterior">‹</button>
+                    <button class="carousel-nav next" id="detailNextBtn" type="button" hidden aria-label="Próxima imagem">›</button>
+                    <div class="carousel-count" id="detailCarouselCount" hidden>1/1</div>
+                  </div>
+
+                  <div class="ig-body">
+                    <div class="ig-actions">
+                      <span class="ig-action">♡</span>
+                      <span class="ig-action">◯</span>
+                      <span class="ig-action">⌁</span>
+                      <span class="ig-action save">♧</span>
+                    </div>
+                    <div class="dots" id="detailDots"></div>
+                    <div class="likes">Curtido por <strong>seu_público</strong> e outras pessoas</div>
+                    <div class="caption"><span class="caption-user" id="detailCaptionUser">sua_marca</span><span id="detailCaptionPreview"></span></div>
+                    <div class="comments">Ver todos os comentários</div>
+                    <div class="time">há alguns segundos</div>
+                  </div>
+                </article>
+              </div>
+            </div>
           </section>
         </div>
-
         <div class="preview-footer">
           <span class="badge" id="modeBadge">Post único</span>
           <span class="badge" id="formatBadge">Formato 1:1</span>
@@ -858,6 +911,20 @@
     const profileSimulation = $('profileSimulation');
     const simulatorWrap = document.querySelector('.simulator-wrap');
     const previewTitle = document.querySelector('.preview-head .panel-title');
+    const profileGridPreview = $('profileGridPreview');
+    const profilePostDetail = $('profilePostDetail');
+    const profilePostDetailClose = $('profilePostDetailClose');
+    const detailMediaStage = $('detailMediaStage');
+    const detailMediaTrack = $('detailMediaTrack');
+    const detailPrevBtn = $('detailPrevBtn');
+    const detailNextBtn = $('detailNextBtn');
+    const detailCarouselCount = $('detailCarouselCount');
+    const detailDots = $('detailDots');
+    let detailCurrent = 0;
+    let detailImages = [];
+    let detailSwipeStartX = null;
+    let detailSwipeStartY = null;
+    let detailSwiping = false;
     let isProfileMode = false;
     let isDraggingCarousel = false;
     let pointerStartX = 0;
@@ -908,13 +975,12 @@
       simulatorWrap?.classList.toggle('profile-view-active', isProfileMode);
       profileSimulation.hidden = !isProfileMode;
       profileToggleBtn.textContent = isProfileMode ? '← Ver publicação' : '▦ Simular perfil';
-
-      if(previewTitle){
-        previewTitle.textContent = isProfileMode ? 'Simulação do perfil' : 'Prévia no feed';
-      }
+      if(previewTitle) previewTitle.textContent = isProfileMode ? 'Simulação do perfil' : 'Prévia no feed';
 
       if(isProfileMode){
         renderProfileSimulation();
+      }else{
+        closeProfileDetail();
       }
       if(updateUrl) updateSharedProfileModeUrl(isProfileMode);
     }
@@ -925,7 +991,7 @@
       $('profileHandlePreview').textContent = accountHandle;
       $('profileNamePreview').textContent = profile.name;
       $('profileBioPreview').textContent = profile.bio;
-      $('profileLinkPreview').textContent = $('locationInput').value.trim() ? `@${accountHandle}` : '';
+      $('profileLinkPreview').textContent = accountHandle ? `@${accountHandle}` : '';
 
       $('profilePostsPreview').textContent = profile.posts;
       $('profileFollowersPreview').textContent = profile.followers;
@@ -946,12 +1012,12 @@
           carousel: state.images.length > 1
         });
       }
-      state.profileImages.forEach(image => {
-        profileItems.push({ src: image.src, newPost: false, carousel: false });
+      state.profileImages.forEach((image, index) => {
+        profileItems.push({ src: image.src, newPost: false, carousel: false, originalIndex: index });
       });
 
-      const cells = profileItems.slice(0, 9).map(item => `
-        <div class="profile-grid-item ${item.newPost ? 'new-post' : ''} ${item.carousel ? 'carousel-post' : ''}">
+      const cells = profileItems.slice(0, 9).map((item, index) => `
+        <div class="profile-grid-item ${item.newPost ? 'new-post' : ''} ${item.carousel ? 'carousel-post' : ''}" data-grid-index="${index}" data-grid-type="${item.newPost ? 'new' : 'old'}">
           <img src="${item.src}" alt="">
         </div>
       `);
@@ -960,7 +1026,86 @@
         cells.push('<div class="profile-grid-item profile-grid-empty"></div>');
       }
 
-      $('profileGridPreview').innerHTML = cells.join('');
+      profileGridPreview.innerHTML = cells.join('');
+    }
+
+    function detailCarouselEnabled(){
+      return detailImages.length > 1;
+    }
+
+    function setDetailTrackPosition(animate = true){
+      if(!detailMediaTrack.children.length) return;
+      detailMediaTrack.style.transition = animate ? 'transform 340ms cubic-bezier(.22,.61,.36,1)' : 'none';
+      detailMediaTrack.style.transform = `translate3d(${-detailCurrent * 100}%, 0, 0)`;
+      detailPrevBtn.hidden = !detailCarouselEnabled() || detailCurrent === 0;
+      detailNextBtn.hidden = !detailCarouselEnabled() || detailCurrent === detailImages.length - 1;
+      detailCarouselCount.hidden = !detailCarouselEnabled();
+      if(detailCarouselEnabled()) detailCarouselCount.textContent = `${detailCurrent + 1}/${detailImages.length}`;
+      detailDots.innerHTML = detailCarouselEnabled()
+        ? detailImages.map((_, i) => `<span class="dot ${i === detailCurrent ? 'active' : ''}"></span>`).join('')
+        : '';
+    }
+
+    function buildDetailTrack(){
+      detailMediaTrack.innerHTML = detailImages.map((src, index) => `
+        <div class="media-slide">
+          <img src="${src}" alt="Imagem ampliada ${index + 1}" draggable="false">
+        </div>
+      `).join('');
+      const ratio = $('ratioSelect').value;
+      detailMediaStage.className = 'media-stage ratio-' + ratio;
+      setDetailTrackPosition(false);
+    }
+
+    function openProfileDetail(kind = 'new', index = 0){
+      if(kind === 'new'){
+        detailImages = state.images.map(item => item.src);
+        detailCurrent = 0;
+        buildDetailTrack();
+        const account = $('accountInput').value.trim() || 'sua_marca';
+        $('detailUsernamePreview').textContent = account;
+        $('detailCaptionUser').textContent = account;
+        $('detailCaptionPreview').textContent = $('captionInput').value || '';
+        const location = $('locationInput').value.trim();
+        $('detailLocationPreview').textContent = location;
+        $('detailLocationPreview').hidden = !location;
+        if(state.avatar){
+          $('detailAvatarPreview').innerHTML = `<img src="${state.avatar}" alt="Foto do perfil">`;
+        }else{
+          $('detailAvatarPreview').textContent = initials(account);
+        }
+        profilePostDetail.classList.add('open');
+      }else{
+        const selected = state.profileImages[index];
+        if(!selected) return;
+        detailImages = [selected.src];
+        detailCurrent = 0;
+        buildDetailTrack();
+        const account = $('accountInput').value.trim() || 'sua_marca';
+        $('detailUsernamePreview').textContent = account;
+        $('detailCaptionUser').textContent = account;
+        $('detailCaptionPreview').textContent = '';
+        $('detailLocationPreview').hidden = true;
+        if(state.avatar){
+          $('detailAvatarPreview').innerHTML = `<img src="${state.avatar}" alt="Foto do perfil">`;
+        }else{
+          $('detailAvatarPreview').textContent = initials(account);
+        }
+        profilePostDetail.classList.add('open');
+      }
+    }
+
+    function closeProfileDetail(){
+      profilePostDetail.classList.remove('open');
+      detailMediaTrack.innerHTML = '';
+      detailDots.innerHTML = '';
+    }
+
+    function moveDetail(direction){
+      const nextIndex = detailCurrent + direction;
+      if(nextIndex < 0 || nextIndex >= detailImages.length) return;
+      detailCurrent = nextIndex;
+      setDetailTrackPosition(true);
     }
 
     function renderProfileImageList(){
@@ -1161,6 +1306,49 @@
       renderProfileImageList();
       renderProfileSimulation();
     });
+
+    profileGridPreview.addEventListener('click', event => {
+      const item = event.target.closest('.profile-grid-item[data-grid-type]');
+      if(!item) return;
+      const kind = item.dataset.gridType;
+      const index = Number(item.dataset.gridIndex || 0);
+      if(kind === 'new'){
+        openProfileDetail('new', 0);
+      }else{
+        openProfileDetail('old', Math.max(0, index - 1));
+      }
+    });
+
+    profilePostDetailClose.addEventListener('click', closeProfileDetail);
+    profilePostDetail.addEventListener('click', event => {
+      if(event.target === profilePostDetail) closeProfileDetail();
+    });
+    detailPrevBtn.addEventListener('click', () => moveDetail(-1));
+    detailNextBtn.addEventListener('click', () => moveDetail(1));
+
+    detailMediaStage.addEventListener('pointerdown', event => {
+      if(!detailCarouselEnabled()) return;
+      detailSwipeStartX = event.clientX;
+      detailSwipeStartY = event.clientY;
+      detailSwiping = true;
+    });
+    detailMediaStage.addEventListener('pointerup', event => {
+      if(!detailSwiping || detailSwipeStartX === null || detailSwipeStartY === null) return;
+      const deltaX = event.clientX - detailSwipeStartX;
+      const deltaY = event.clientY - detailSwipeStartY;
+      if(Math.abs(deltaX) > 42 && Math.abs(deltaX) > Math.abs(deltaY)){
+        if(deltaX < 0) moveDetail(1);
+        else moveDetail(-1);
+      }
+      detailSwipeStartX = null;
+      detailSwipeStartY = null;
+      detailSwiping = false;
+    });
+    detailMediaStage.addEventListener('pointercancel', () => {
+      detailSwipeStartX = null;
+      detailSwipeStartY = null;
+      detailSwiping = false;
+    });
     ['dragenter','dragover'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.add('dragover')}));
     ['dragleave','drop'].forEach(type=>dropzone.addEventListener(type,e=>{e.preventDefault();dropzone.classList.remove('dragover')}));
     dropzone.addEventListener('drop',e=>applyImages(e.dataTransfer.files));
@@ -1312,6 +1500,7 @@ render();
     $('shareBtn').addEventListener('click', createLiveShareLink);
 
     $('resetBtn').addEventListener('click',()=>{
+      closeProfileDetail();
       if(isProfileMode) setProfileSimulation(false);
       state.images=[];state.profileImages=[];state.current=0;state.avatar=null;state.view='auto';state.liked=false;
       $('accountInput').value='sua_marca';$('locationInput').value='';$('captionInput').value='Sua legenda aparece aqui. ✨';$('ratioSelect').value='square';
